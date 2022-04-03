@@ -1,26 +1,29 @@
 import pygame as game
 import numpy as np
+from PIL import Image
+from datetime import datetime as dt
 
 game.init()
 
-WIDTH = 800
-HEIGHT = 800
+WIDTH = 400
+HEIGHT = 400
 
 screen = game.display.set_mode((WIDTH, HEIGHT))
 
 game.display.set_caption("Mandelbrot Set")
 
 generated_points = False 
+written_to_file = False
 points = [[(0, 0, 0) for _ in range(WIDTH)] for __ in range(HEIGHT)]
 
-scroll = 1.5
+scroll = 0.035
 scroll_speed = 0.78
 speed = 30
-x_offset = 0
-y_offset = 0
+x_offset = 3900
+y_offset = 300
 last_frame = 0
 
-iterations = 300
+iterations = 50
 
 def _map(val, r1, r2, nr1, nr2):
     return ((val - r1) / (r2 - r1) ) * (nr2 - nr1) + nr1
@@ -41,8 +44,7 @@ def calc_colour(point):
         return (255, 255, 255)
 
     def next_z(zn, c):
-        # return zn**2  + c
-        return np.sin(zn/c)
+        return zn**2 + c
     
     z = 0
     z_count = 0
@@ -69,17 +71,21 @@ while running:
     screen.fill((255, 255, 255))
 
     if not generated_points:
+        mandelbrot = Image.new("RGB", (WIDTH, HEIGHT))
         for x in range(WIDTH):
             for y in range(HEIGHT):
-                mapped_x = _map(x, x_offset, WIDTH+x_offset, -scroll, scroll)
+                mapped_x = _map(x, x_offset, WIDTH+x_offset, -scroll*(WIDTH/HEIGHT), scroll*(WIDTH/HEIGHT))
                 mapped_y = _map(y, y_offset, HEIGHT+y_offset, -scroll, scroll)
 
                 colour = calc_colour(complex(mapped_x, mapped_y))
                 points[y][x] = colour
 
+                mandelbrot.putpixel((x, y), colour)
+
                 screen.set_at((x, y), colour)
             print(f"{(x*HEIGHT)+y+1}/{WIDTH*HEIGHT}")
 
+        mandelbrot.save(f"mandelbrot_img.png")
         generated_points = True
     else:
         for x in range(WIDTH):
