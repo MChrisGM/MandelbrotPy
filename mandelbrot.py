@@ -1,12 +1,11 @@
 import pygame as game
 import numpy as np
 from PIL import Image
-from datetime import datetime as dt
 
 game.init()
 
-WIDTH = 400
-HEIGHT = 400
+WIDTH = 900
+HEIGHT = 900
 
 screen = game.display.set_mode((WIDTH, HEIGHT))
 
@@ -16,14 +15,14 @@ generated_points = False
 written_to_file = False
 points = [[(0, 0, 0) for _ in range(WIDTH)] for __ in range(HEIGHT)]
 
-scroll = 0.035
+scroll = 2
 scroll_speed = 0.78
 speed = 30
-x_offset = 3900
-y_offset = 300
+x_offset = 0
+y_offset = 0
 last_frame = 0
 
-iterations = 50
+iterations = 5000
 
 def _map(val, r1, r2, nr1, nr2):
     return ((val - r1) / (r2 - r1) ) * (nr2 - nr1) + nr1
@@ -35,8 +34,8 @@ def num_to_hex(num):
     return hex(int(num))[2:]
 
 def num_to_rgb(num):
-    hex = num_to_hex(num)
-    return hex_to_rgb("0"*(6-len(hex))+hex)
+    h = num_to_hex(num)
+    return hex_to_rgb("0"*(6-len(h))+h)
 
 
 def calc_colour(point):
