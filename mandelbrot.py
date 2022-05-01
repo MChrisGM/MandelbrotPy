@@ -94,9 +94,8 @@ def update_progress(frame, pct, done = True):
         clear()
         ps = dict(sorted(progress.items()))
         for i in list(ps):
-            if math.ceil(progress[i]*100) == 100 and done:
-                printProgressBar(math.ceil(progress[i]*100), i)
-                print()
+            printProgressBar(math.ceil(progress[i]*100), i)
+            print()
         displaying = False
 
 def task(n, s):
