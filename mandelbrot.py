@@ -2,11 +2,12 @@ import math
 from PIL import Image
 import os
 import sys
-import glob
+import colour_map
+import numpy as np
 from threading import Thread
 
-WIDTH = 4096
-HEIGHT = 2160
+WIDTH = 256
+HEIGHT = 256
 FRAMES = 60
 
 fp_in = "./mandelbrot/mandelbrot_img*.png"
@@ -22,12 +23,12 @@ generated_points = False
 written_to_file = False
 points = [[(0, 0, 0) for _ in range(WIDTH)] for __ in range(HEIGHT)]
 
-scroll = 2
+scroll = 1.8
 scroll_speed = 0.9
 x_offset = -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375
 y_offset = -0.00000000000000165712469295418692325810961981279189026504290127375760405334498110850956047368308707050735960323397389547038231194872482690340369921750514146922400928554011996123112902000856666847088788158433995358406779259404221904755
 
-iterations = 128
+iterations = 1000
 
 def _map(val, r1, r2, nr1, nr2):
     return ((val - r1) / (r2 - r1) ) * (nr2 - nr1) + nr1
@@ -42,11 +43,19 @@ def num_to_rgb(num):
     h = num_to_hex(num)
     return hex_to_rgb("0"*(6-len(h))+h)
 
+def colour_maths(_z, _z_count):
+    smoothed = np.log2(np.log2(_z.real**2 + _z.imag**2) / 2)
+    colourI = int(np.sqrt(_z_count + 10 - smoothed) * 256) % len(colour_map.red)
+    colour = (int(colour_map.red[colourI]), int(colour_map.green[colourI]), int(colour_map.blue[colourI]))
+    return colour
+
 def calc_colour(point):
     if point.imag**2 + point.real**2 > 4:
-        return (255, 255, 255)
+        return (2, 3, 0)
+
     def next_z(zn, c):
         return zn**2 + c
+    
     z = 0
     z_count = 0
     for x in range(iterations):
@@ -54,11 +63,10 @@ def calc_colour(point):
             z = next_z(z, point)
             z_count += 1
             if z.real**2 + z.imag**2 > 4:
-                col = _map(z_count, 0, iterations-1, 0, 16777215)
-                return num_to_rgb(col)
+                return colour_maths(z, z_count)
         except OverflowError:
-            col = _map(z_count, 0, iterations-1, 0, 16777215)
-            return num_to_rgb(col)
+            return colour_maths(z, z_count)
+    
     return (0, 0, 0)
 
 def calculate_indices():
@@ -75,7 +83,7 @@ def calculate_remaining(n):
     return len(remaining)
 
 def printProgressBar(value,label):
-    n_bar = 100 #size of progress bar
+    n_bar = 100
     max = 100
     j= value/max
     sys.stdout.write('\r')
@@ -140,5 +148,5 @@ if __name__ == '__main__':
     create_threads()
     start_threads()
     join_threads()
-    # save_frames()
+    save_frames()
     make_gif()
