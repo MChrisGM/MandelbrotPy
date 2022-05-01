@@ -5,8 +5,8 @@ import sys
 import glob
 from threading import Thread
 
-WIDTH = 512
-HEIGHT = 512
+WIDTH = 4096
+HEIGHT = 2160
 FRAMES = 60
 
 fp_in = "./mandelbrot/mandelbrot_img*.png"
