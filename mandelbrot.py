@@ -2,11 +2,15 @@ import math
 from PIL import Image
 import os
 import sys
+import glob
 from threading import Thread
 
-WIDTH = 256
-HEIGHT = 256
+WIDTH = 512
+HEIGHT = 512
 FRAMES = 60
+
+fp_in = "./mandelbrot/mandelbrot_img*.png"
+fp_out = "output.gif"
 
 frames = []
 threads = []
@@ -37,7 +41,6 @@ def num_to_hex(num):
 def num_to_rgb(num):
     h = num_to_hex(num)
     return hex_to_rgb("0"*(6-len(h))+h)
-
 
 def calc_colour(point):
     if point.imag**2 + point.real**2 > 4:
@@ -82,7 +85,7 @@ def printProgressBar(value,label):
     sys.stdout.write(f"{label} | [{bar:{n_bar}s}] {int(100 * j)}% ")
     sys.stdout.flush()
 
-def update_progress(frame, pct):
+def update_progress(frame, pct, done = True):
     global displaying
     progress[frame] = pct
     if not displaying:
@@ -91,8 +94,9 @@ def update_progress(frame, pct):
         clear()
         ps = dict(sorted(progress.items()))
         for i in list(ps):
-            printProgressBar(math.ceil(progress[i]*100), i)
-            print()
+            if math.ceil(progress[i]*100) == 100 and done:
+                printProgressBar(math.ceil(progress[i]*100), i)
+                print()
         displaying = False
 
 def task(n, s):
@@ -103,7 +107,7 @@ def task(n, s):
             mapped_y = _map(y, 0, HEIGHT, -s+y_offset, s+y_offset)
             colour = calc_colour(complex(mapped_x, mapped_y))
             mandelbrot.putpixel((x, y), colour)
-        update_progress(n, x/WIDTH)
+        update_progress(n, x/WIDTH, False)
     r = calculate_remaining(n)
     frames.append((n, mandelbrot))
 
@@ -114,13 +118,11 @@ def save_frames():
 def create_threads():
     r = calculate_indices()
     for i in range(FRAMES):
-        # print('Creating thread ',i)
         t = Thread(target=task, args=(r[i][0],r[i][1]))
         threads.append(t)
 
 def start_threads():
     for i in range(len(threads)):
-        # print('Starting thread ',i)
         threads[i].start()
 
 def join_threads():
@@ -128,9 +130,16 @@ def join_threads():
         t.join()
     print('Done')
 
+def make_gif():
+    global frames
+    frames = sorted(frames, key=lambda tup: tup[0])
+    imgs = [f[1] for f in frames]
+    img = imgs[0]
+    img.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=FRAMES, loop=0)
 
 if __name__ == '__main__':
     create_threads()
     start_threads()
     join_threads()
-    save_frames()
+    # save_frames()
+    make_gif()
