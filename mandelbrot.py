@@ -1,17 +1,18 @@
-import pygame as game
-import numpy as np
-import os
+import math
 from PIL import Image
-
+import os
+import sys
 from threading import Thread
 
-WIDTH = 500
-HEIGHT = 500
-FRAMES = 50
+WIDTH = 256
+HEIGHT = 256
+FRAMES = 60
 
 frames = []
 threads = []
 remaining = [i for i in range(FRAMES)]
+progress = {}
+displaying = False
 
 generated_points = False 
 written_to_file = False
@@ -19,11 +20,10 @@ points = [[(0, 0, 0) for _ in range(WIDTH)] for __ in range(HEIGHT)]
 
 scroll = 2
 scroll_speed = 0.9
-speed = 30
 x_offset = -1.74999841099374081749002483162428393452822172335808534616943930976364725846655540417646727085571962736578151132907961927190726789896685696750162524460775546580822744596887978637416593715319388030232414667046419863755743802804780843375
 y_offset = -0.00000000000000165712469295418692325810961981279189026504290127375760405334498110850956047368308707050735960323397389547038231194872482690340369921750514146922400928554011996123112902000856666847088788158433995358406779259404221904755
 
-iterations = 500
+iterations = 128
 
 def _map(val, r1, r2, nr1, nr2):
     return ((val - r1) / (r2 - r1) ) * (nr2 - nr1) + nr1
@@ -71,6 +71,30 @@ def calculate_remaining(n):
     remaining.remove(n)
     return len(remaining)
 
+def printProgressBar(value,label):
+    n_bar = 100 #size of progress bar
+    max = 100
+    j= value/max
+    sys.stdout.write('\r')
+    bar = '█' * int(n_bar * j)
+    bar = bar + '-' * int(n_bar * (1-j))
+
+    sys.stdout.write(f"{label} | [{bar:{n_bar}s}] {int(100 * j)}% ")
+    sys.stdout.flush()
+
+def update_progress(frame, pct):
+    global displaying
+    progress[frame] = pct
+    if not displaying:
+        displaying = True
+        clear = lambda: os.system('cls')
+        clear()
+        ps = dict(sorted(progress.items()))
+        for i in list(ps):
+            printProgressBar(math.ceil(progress[i]*100), i)
+            print()
+        displaying = False
+
 def task(n, s):
     mandelbrot = Image.new("RGB", (WIDTH, HEIGHT))
     for x in range(WIDTH):
@@ -79,10 +103,8 @@ def task(n, s):
             mapped_y = _map(y, 0, HEIGHT, -s+y_offset, s+y_offset)
             colour = calc_colour(complex(mapped_x, mapped_y))
             mandelbrot.putpixel((x, y), colour)
-
-    print('Finished frame ', n)
+        update_progress(n, x/WIDTH)
     r = calculate_remaining(n)
-    print('Remaining: '+str(r))
     frames.append((n, mandelbrot))
 
 def save_frames():
@@ -92,13 +114,13 @@ def save_frames():
 def create_threads():
     r = calculate_indices()
     for i in range(FRAMES):
-        print('Creating thread ',i)
+        # print('Creating thread ',i)
         t = Thread(target=task, args=(r[i][0],r[i][1]))
         threads.append(t)
 
 def start_threads():
     for i in range(len(threads)):
-        print('Starting thread ',i)
+        # print('Starting thread ',i)
         threads[i].start()
 
 def join_threads():
